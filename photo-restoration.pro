@@ -11,10 +11,23 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = photo-restoration
 TEMPLATE = app
 
+INCLUDEPATH += "/usr/include/opencv/include"
+
+LIBS +=    -L/usr/lib64/opencv \
+-lopencv_core \
+-lopencv_highgui \
+-lopencv_imgproc
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    processedimagescollection.cpp \
+    processorutils.cpp \
+    ycrcbprocessor.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    iprocessor.h \
+    processedimagescollection.h \
+    processorutils.h \
+    ycrcbprocessor.h
 
 FORMS    += mainwindow.ui

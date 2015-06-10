@@ -1,0 +1,8 @@
+http://creative-punch.net/2014/02/opening-displaying-saving-images-qt/
+http://stackoverflow.com/questions/16420753/convert-mat-to-qpixmap
+http://doc.qt.io/qt-5/qtwidgets-itemviews-puzzle-example.html
+
+https://www.youtube.com/playlist?list=PLB22HyVdO1GkLFrvRi5vIo5XcWS0EflxD
+https://www.youtube.com/playlist?list=PLPeSWEML8bFV8lzTJ_oORLUlfugzuQ5yF
+
+http://www.digitalfanatics.org/projects/qt_tutorial/chapter02.html
