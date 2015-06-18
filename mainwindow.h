@@ -10,7 +10,7 @@
 #include <QGraphicsPixmapItem>
 #include <QGridLayout>
 #include "processedimagescollection.h"
-#include "ycrcbprocessor.h"
+#include "ramponiprocessor.h"
 
 namespace Ui {
 class MainWindow;

@@ -9,11 +9,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->imagesCollection = new ProcessedImagesCollection();
 
-    QSharedPointer<YCrCBProcessor> ycrcbProcessor(new YCrCBProcessor());
+    QSharedPointer<RamponiProcessor> ycrcbProcessor(new RamponiProcessor());
     this->imagesCollection->addProcessor(ycrcbProcessor);
-
-    QSharedPointer<YCrCBProcessor> ycrcbProcessor2(new YCrCBProcessor());
-    this->imagesCollection->addProcessor(ycrcbProcessor2);
 
     this->graphicsViews = new QList<QGraphicsView*>();
 }

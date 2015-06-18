@@ -12,6 +12,8 @@ public:
     ProcessorUtils();
     static QPixmap Mat2QPixmap(cv::Mat const& src);
     static cv::Mat QPixmap2Mat(QPixmap const& src);
+    static cv::Mat ExtractFoxingMat(cv::Mat const CrMat, int threshold);
+    static cv::vector<cv::Mat> ExtractYCrCb(const cv::Mat& src);
 };
 
 #endif // PROCESSORUTILS_H
