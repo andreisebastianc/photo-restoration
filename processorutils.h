@@ -5,6 +5,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <QPixmap>
 #include <QImage>
+#include <QDebug>
 
 class ProcessorUtils
 {

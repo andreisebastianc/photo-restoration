@@ -5,23 +5,53 @@ ProcessorUtils::ProcessorUtils()
 
 }
 
+// from
+// https://bitbucket.org/bastian_weber/hibo/src/8eb02029bb54d6e14b7038d522a3ed9489617ae7/BorderExtractor.cpp?at=default
 QPixmap ProcessorUtils::Mat2QPixmap(const cv::Mat &src)
 {
-    cv::Mat temp = cv::Mat(src.rows, src.cols, CV_32F); // make the same cv::Mat
-    cv::cvtColor(src, temp, cv::COLOR_BGR2RGB); // cvtColor Makes a copt, that what i need
-    QImage dest((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
-    dest.bits(); // enforce deep copy, see documentation
-    // of QImage::QImage ( const uchar * data, int width, int height, Format format )
-    return QPixmap::fromImage(dest);
+    QImage image;
+
+    if (src.type() == CV_8UC4){
+        image = QImage(src.data, src.cols, src.rows, src.step, QImage::Format_ARGB32);
+    } else if (src.type() == CV_8UC3){
+        image = QImage(src.data, src.cols, src.rows, src.step, QImage::Format_RGB888).rgbSwapped();
+    } else if (src.type() == CV_8UC1){
+        QVector<QRgb> sColorTable;
+        for (int i = 0; i < 256; ++i){
+            sColorTable.push_back(qRgb(i, i, i));
+        }
+        image = QImage(src.data, src.cols, src.rows, src.step, QImage::Format_Indexed8);
+        image.setColorTable(sColorTable);
+    } else{
+        qDebug() << "ERROR: Conversion from cv::Mat to QPixmap unsuccessfull because type is unknown.";
+    }
+
+    return QPixmap::fromImage(image);
 }
 
+// from
+// https://bitbucket.org/bastian_weber/hibo/src/8eb02029bb54d6e14b7038d522a3ed9489617ae7/BorderExtractor.cpp?at=default
 cv::Mat ProcessorUtils::QPixmap2Mat(const QPixmap &src)
 {
     QImage image = src.toImage();
-    cv::Mat tmp(image.height(),image.width(),CV_8UC3,(uchar*)image.bits(),image.bytesPerLine());
-    cv::Mat result; // deep copy just in case (my lack of knowledge with open cv)
-    cv::cvtColor(tmp, result, cv::COLOR_BGR2RGB);
-    return result;
+    cv::Mat mat;
+
+    if (image.format() == QImage::Format_ARGB32 || image.format() == QImage::Format_ARGB32_Premultiplied){
+        mat = cv::Mat(image.height(), image.width(), CV_8UC4, const_cast<uchar*>(image.bits()), image.bytesPerLine()).clone();
+    } else if (image.format() == QImage::Format_RGB32){
+        QImage converted = image.convertToFormat(QImage::Format_RGB888).rgbSwapped();
+        mat = cv::Mat(converted.height(), converted.width(), CV_8UC3, const_cast<uchar*>(converted.bits()), converted.bytesPerLine()).clone();
+        //alternative: don't convert and use CV_8UC4 - but then you have a white alpha channel
+    } else if (image.format() == QImage::Format_RGB888){
+        QImage swapped = image.rgbSwapped();
+        mat = cv::Mat(swapped.height(), swapped.width(), CV_8UC3, const_cast<uchar*>(swapped.bits()), swapped.bytesPerLine()).clone();
+    } else if (image.format() == QImage::Format_Indexed8){
+        mat = cv::Mat(image.height(), image.width(), CV_8UC1, const_cast<uchar*>(image.bits()), image.bytesPerLine()).clone();
+    } else{
+        qDebug() << "ERROR: Conversion from QPixmap to cv::Mat unsuccessfull because type is unknown.";
+    }
+
+    return mat;
 }
 
 cv::vector<cv::Mat> ProcessorUtils::ExtractYCrCb(const cv::Mat &src) {
