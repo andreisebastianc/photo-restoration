@@ -13,6 +13,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->imagesCollection->addProcessor(ycrcbProcessor);
 
     this->graphicsViews = new QList<ImageDisplayer*>();
+
+    this->openImage("/home/andrei/Documents/work/photo-restoration/test.jpg");
 }
 
 MainWindow::~MainWindow()
@@ -22,23 +24,33 @@ MainWindow::~MainWindow()
     delete this->graphicsViews;
 }
 
+bool MainWindow::openImage(QString fileName)
+{
+    QPixmap newImage;
+
+    if (!newImage.load(fileName)) {
+        return false;
+    }
+
+    this->imagesCollection->setPixmap(newImage);
+    this->initGraphicsScene();
+
+    return true;
+}
+
 void MainWindow::on_actionOpen_Image_triggered()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
         tr("Open Image"), "/home/jana", tr("Image Files (*.png *.jpg *.bmp)"));
 
     if (!fileName.isEmpty()) {
-        QPixmap newImage;
 
-        if (!newImage.load(fileName)) {
+        if (!this->openImage(fileName)) {
             QMessageBox::warning(this, tr("Open Image"),
                                  tr("The image file could not be loaded."),
                                  QMessageBox::Cancel);
             return;
         }
-
-        this->imagesCollection->setPixmap(newImage);
-        this->initGraphicsScene();
     }
 }
 

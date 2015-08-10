@@ -22,6 +22,7 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = 0);
+    bool openImage(QString fileName);
     ~MainWindow();
 
 private slots:
