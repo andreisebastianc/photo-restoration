@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QSharedPointer<RamponiProcessor> ycrcbProcessor(new RamponiProcessor());
     this->imagesCollection->addProcessor(ycrcbProcessor);
 
-    this->graphicsViews = new QList<QGraphicsView*>();
+    this->graphicsViews = new QList<ImageDisplayer*>();
 }
 
 MainWindow::~MainWindow()
@@ -54,7 +54,7 @@ void MainWindow::initGraphicsScene()
 QGraphicsView* MainWindow::createGraphicsScene(const QPixmap &pixmap)
 {
     QGraphicsScene *scene = new QGraphicsScene(this);
-    QGraphicsView *view = new QGraphicsView(scene, this);
+    ImageDisplayer *view = new ImageDisplayer(scene, this);
 
     scene->addPixmap(pixmap);
 

@@ -22,13 +22,15 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     processedimagescollection.cpp \
     processorutils.cpp \
-    ramponiprocessor.cpp
+    ramponiprocessor.cpp \
+    imagedisplayer.cpp
 
 HEADERS  += mainwindow.h \
     iprocessor.h \
     processedimagescollection.h \
     processorutils.h \
     rationalfilter.h \
-    ramponiprocessor.h
+    ramponiprocessor.h \
+    imagedisplayer.h
 
 FORMS    += mainwindow.ui

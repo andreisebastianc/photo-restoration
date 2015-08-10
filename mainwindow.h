@@ -6,14 +6,14 @@
 #include <QMessageBox>
 #include <QList>
 #include <QGraphicsScene>
-#include <QGraphicsView>
 #include <QGraphicsPixmapItem>
 #include <QGridLayout>
 #include "processedimagescollection.h"
 #include "ramponiprocessor.h"
+#include "imagedisplayer.h"
 
 namespace Ui {
-class MainWindow;
+    class MainWindow;
 }
 
 class MainWindow : public QMainWindow
@@ -33,7 +33,7 @@ private:
     QGraphicsView* createGraphicsScene(const QPixmap &pixmap);
     Ui::MainWindow *ui;
     ProcessedImagesCollection *imagesCollection;
-    QList<QGraphicsView*> *graphicsViews;
+    QList<ImageDisplayer*> *graphicsViews;
 };
 
 #endif // MAINWINDOW_H
