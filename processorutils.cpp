@@ -67,8 +67,7 @@ cv::Mat ProcessorUtils::ExtractFoxingMat(const cv::Mat crMat, int threshold)
     int i;
     int j;
 
-    cv::Mat foxingDetected = cv::Mat::zeros(crMat.rows, crMat.cols, CV_32F);
-
+    cv::Mat foxingDetected = cv::Mat::zeros(crMat.rows, crMat.cols, CV_8UC1);
 
     int maxCr = 0;
     for (i = 0; i < crMat.rows; ++i) {

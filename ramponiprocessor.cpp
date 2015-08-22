@@ -2,17 +2,15 @@
 
 RamponiProcessor::RamponiProcessor()
 {
-
 }
 
 RamponiProcessor::~RamponiProcessor()
 {
-
 }
 
 cv::Mat RamponiProcessor::produceSmoothMat(const cv::Mat mat, const int k, const int A, int smoothSteps) const
 {
-    cv::Mat res = cv::Mat(mat.rows, mat.cols, CV_32F);
+    cv::Mat res = cv::Mat(mat.rows, mat.cols, CV_8UC1);
     int i;
     int j;
     int dividend1;
@@ -63,7 +61,7 @@ int RamponiProcessor::calculateDetailImageCoeficient(const cv::Mat luminanceMat,
 
 cv::Mat RamponiProcessor::produceDetailsMat(const cv::Mat luminanceMat, const cv::Mat smoothedImage, const int coeficient) const
 {
-    cv::Mat res = cv::Mat(luminanceMat.rows, luminanceMat.cols, CV_32F);
+    cv::Mat res = cv::Mat(luminanceMat.rows, luminanceMat.cols, CV_8UC1);
 
     int i;
     int j;
@@ -77,16 +75,55 @@ cv::Mat RamponiProcessor::produceDetailsMat(const cv::Mat luminanceMat, const cv
     return res;
 }
 
+cv::Mat RamponiProcessor::correctFoxing(const cv::Mat &src, const cv::Mat &smoothFoxing) const
+{
+    cv::Mat res = cv::Mat(src.rows, src.cols, CV_8UC1);
+
+    int i;
+    int j;
+    int val;
+    int median;
+    int size;
+    QVector<int> valuesForMedian;
+    QVector<std::array<int,2>> temp;
+
+    for (i = 1; i < smoothFoxing.rows - 1; ++i) {
+        for (j = 1; j < smoothFoxing.cols - 1; ++j) {
+            val = smoothFoxing.at<uchar>(i,j);
+            if(val > 0) {
+                valuesForMedian.push_back(val);
+                temp.push_back({i,j});
+            } else {
+                res.at<uchar>(i,j) = src.at<uchar>(i,j);
+            }
+        }
+    }
+
+    std::sort(valuesForMedian.begin(), valuesForMedian.end());
+
+    size = valuesForMedian.size();
+    if(size % 2 == 0) {
+        median = ( valuesForMedian.at(size / 2 - 1) + valuesForMedian.at(size / 2) ) / 2;
+    } else {
+        median = valuesForMedian.at(size / 2);
+    }
+
+    for (i = 0; i < temp.size(); ++i) {
+        res.at<uchar>(temp.at(i)[0], temp.at(i)[1]) = median;
+    }
+
+    return res;
+}
+
 QPixmap RamponiProcessor::process(const QPixmap &pixmap) const
 {
     cv::Mat img = ProcessorUtils::QPixmap2Mat(pixmap);
 
-    cv::vector<cv::Mat> channels;
-
     // Foxing
     // foxing detection
     cv::vector<cv::Mat> yCrCbMatChannels = ProcessorUtils::ExtractYCrCb(img);
-    cv::Mat foxingMat = ProcessorUtils::ExtractFoxingMat(yCrCbMatChannels[0], 30);
+
+    cv::Mat foxingMat = ProcessorUtils::ExtractFoxingMat(yCrCbMatChannels[2], 30);
     // detais image extraction
     cv::Mat luminanceMat;
     cv::cvtColor(img, luminanceMat, CV_BGR2GRAY);
@@ -104,7 +141,7 @@ QPixmap RamponiProcessor::process(const QPixmap &pixmap) const
     // merging
     int i;
     int j;
-    cv::Mat yn = cv::Mat(smoothFoxingMat.rows, smoothFoxingMat.cols, CV_32F);
+    cv::Mat yn = cv::Mat(smoothFoxingMat.rows, smoothFoxingMat.cols, CV_8UC1);
 
     for (i = 1; i < yn.rows - 1; ++i) {
         for (j = 1; j < yn.cols - 1; ++j) {
@@ -114,14 +151,13 @@ QPixmap RamponiProcessor::process(const QPixmap &pixmap) const
     }
 
     // color filtering
+    // @todo need to figure out what to do with the resulting values from color filtering
+    this->correctFoxing(yCrCbMatChannels[1], smoothFoxingMat);
+    this->correctFoxing(yCrCbMatChannels[2], smoothFoxingMat);
 
-    // temp for outputing a picture
-    channels.push_back(yn);
-    channels.push_back(yn);
-    channels.push_back(yn);
-
-    cv::merge(channels, yn);
+    //  tonal adjustment
 
     return ProcessorUtils::Mat2QPixmap(yn);
 }
+
 

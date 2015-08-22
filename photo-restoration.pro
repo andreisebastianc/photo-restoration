@@ -13,6 +13,8 @@ TEMPLATE = app
 
 INCLUDEPATH += "/usr/include/opencv/include"
 
+CONFIG += c++11
+
 LIBS +=    -L/usr/lib64/opencv \
 -lopencv_core \
 -lopencv_highgui \
