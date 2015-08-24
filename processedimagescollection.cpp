@@ -13,17 +13,24 @@ ProcessedImagesCollection::~ProcessedImagesCollection()
 void ProcessedImagesCollection::setPixmap(const QPixmap pixmap)
 {
     this->pixmap = pixmap;
+    this->processedPixmaps.clear();
     this->processedPixmaps.append(pixmap);
 
     for (int i = 0; i < this->processors.length(); ++i) {
-        QPixmap processed = this->processors.at(i).data()->process(pixmap);
-        this->processedPixmaps.append(processed);
+        this->processPixmap(this->processors.at(i));
     }
 }
 
-void ProcessedImagesCollection::addProcessor(const QSharedPointer<IProcessor> &processor)
+QPixmap ProcessedImagesCollection::processPixmap(const QSharedPointer<IProcessor> &processor) {
+    QPixmap processed = processor.data()->process(this->pixmap);
+    this->processedPixmaps.append(processed);
+    return processed;
+}
+
+QPixmap ProcessedImagesCollection::addProcessor(const QSharedPointer<IProcessor> &processor)
 {
     this->processors.append(processor);
+    return this->processPixmap(processor);
 }
 
 int ProcessedImagesCollection::length()

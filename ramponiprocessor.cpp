@@ -1,14 +1,22 @@
 #include "ramponiprocessor.h"
 
-RamponiProcessor::RamponiProcessor()
+Ramponi::Processor::Processor()
 {
 }
 
-RamponiProcessor::~RamponiProcessor()
+Ramponi::Processor::~Processor()
 {
 }
 
-cv::Mat RamponiProcessor::produceSmoothMat(const cv::Mat mat, const int k, const int A, int smoothSteps) const
+const QVector<QString> Ramponi::Processor::config = {
+    "s, smoothing steps",
+    "n, number of times rational filter is applied",
+    "A, used in detail image extraction",
+    "k, used in detail image extraction",
+    "t, threshold output but Otsu's method"
+};
+
+cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat mat, const int k, const int A, int smoothSteps) const
 {
     cv::Mat res = cv::Mat(mat.rows, mat.cols, CV_8UC1);
     int i;
@@ -36,7 +44,7 @@ cv::Mat RamponiProcessor::produceSmoothMat(const cv::Mat mat, const int k, const
 }
 
 // @todo  N. Otsu “A Threshold selection method from gray-scale histogram” is t
-int RamponiProcessor::calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat, const int threshold) const
+int Ramponi::Processor::calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat, const int threshold) const
 {
     int i;
     int j;
@@ -59,7 +67,7 @@ int RamponiProcessor::calculateDetailImageCoeficient(const cv::Mat luminanceMat,
     return 0;
 }
 
-cv::Mat RamponiProcessor::produceDetailsMat(const cv::Mat luminanceMat, const cv::Mat smoothedImage, const int coeficient) const
+cv::Mat Ramponi::Processor::produceDetailsMat(const cv::Mat luminanceMat, const cv::Mat smoothedImage, const int coeficient) const
 {
     cv::Mat res = cv::Mat(luminanceMat.rows, luminanceMat.cols, CV_8UC1);
 
@@ -75,7 +83,7 @@ cv::Mat RamponiProcessor::produceDetailsMat(const cv::Mat luminanceMat, const cv
     return res;
 }
 
-cv::Mat RamponiProcessor::correctFoxing(const cv::Mat &src, const cv::Mat &smoothFoxing) const
+cv::Mat Ramponi::Processor::correctFoxing(const cv::Mat &src, const cv::Mat &smoothFoxing) const
 {
     cv::Mat res = cv::Mat(src.rows, src.cols, CV_8UC1);
 
@@ -115,7 +123,7 @@ cv::Mat RamponiProcessor::correctFoxing(const cv::Mat &src, const cv::Mat &smoot
     return res;
 }
 
-QPixmap RamponiProcessor::process(const QPixmap &pixmap) const
+QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
 {
     cv::Mat img = ProcessorUtils::QPixmap2Mat(pixmap);
 
@@ -159,5 +167,3 @@ QPixmap RamponiProcessor::process(const QPixmap &pixmap) const
 
     return ProcessorUtils::Mat2QPixmap(yn);
 }
-
-

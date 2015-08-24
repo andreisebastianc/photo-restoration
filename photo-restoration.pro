@@ -25,7 +25,8 @@ SOURCES += main.cpp\
     processedimagescollection.cpp \
     processorutils.cpp \
     ramponiprocessor.cpp \
-    imagedisplayer.cpp
+    imagedisplayer.cpp \
+    processorconfiggenerator.cpp
 
 HEADERS  += mainwindow.h \
     iprocessor.h \
@@ -33,6 +34,7 @@ HEADERS  += mainwindow.h \
     processorutils.h \
     rationalfilter.h \
     ramponiprocessor.h \
-    imagedisplayer.h
+    imagedisplayer.h \
+    processorconfiggenerator.h
 
 FORMS    += mainwindow.ui

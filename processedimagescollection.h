@@ -11,17 +11,15 @@ class ProcessedImagesCollection
 public:
     ProcessedImagesCollection();
     ~ProcessedImagesCollection();
-
-    void setPixmap(const QPixmap pixmap);
-    void addProcessor(const QSharedPointer<IProcessor> &processor);
-    int length();
+    QPixmap addProcessor(const QSharedPointer<IProcessor> &processor);
     QPixmap at(int index);
-
     QList<QPixmap> getProcessedImages();
+    void setPixmap(const QPixmap pixmap);
+    int length();
 
 private:
     QPixmap pixmap;
-
+    QPixmap processPixmap(const QSharedPointer<IProcessor> &processor);
     QList<QSharedPointer<IProcessor> > processors;
     QList<QPixmap> processedPixmaps;
 };
