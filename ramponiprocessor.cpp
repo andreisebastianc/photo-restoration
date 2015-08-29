@@ -6,7 +6,6 @@ Ramponi::Processor::Processor(QVector<int> params)
     this->n = params.at(1);
     this->A = params.at(2);
     this->k = params.at(3);
-    this->t = params.at(4);
 }
 
 Ramponi::Processor::~Processor()
@@ -17,8 +16,7 @@ const QVector<QPair<QString, QString>> Ramponi::Processor::config = {
     QPair<QString, QString>("s, threshold for foxing", "80"),
     QPair<QString, QString>("n, number of times rational filter is applied", "10"),
     QPair<QString, QString>("A, used in detail image extraction", "10"),
-    QPair<QString, QString>("k, used in detail image extraction", "10"),
-    QPair<QString, QString>("t, threshold output but Otsu's method", "10")
+    QPair<QString, QString>("k, used in detail image extraction", "10")
 };
 
 cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator) const
@@ -52,7 +50,7 @@ cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat numeratorMat, const c
 }
 
 // @todo  N. Otsu “A Threshold selection method from gray-scale histogram” is t
-int Ramponi::Processor::calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat) const
+int Ramponi::Processor::calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat, int threshold) const
 {
     int i;
     int j;
@@ -61,8 +59,7 @@ int Ramponi::Processor::calculateDetailImageCoeficient(const cv::Mat luminanceMa
 
     for (i = 1; i < luminanceMat.rows - 1; ++i) {
         for (j = 1; j < luminanceMat.cols - 1; ++j) {
-            // this->t is Otsu
-            if ( foxedMat.at<uchar>(i,j) == 0 && luminanceMat.at<uchar>(i,j) > this->t ) {
+            if ( foxedMat.at<uchar>(i,j) == 0 && luminanceMat.at<uchar>(i,j) > threshold ) {
                 res += luminanceMat.at<uchar>(i,j);
                 counter++;
             }
@@ -139,6 +136,9 @@ QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
 {
     cv::Mat img = ProcessorUtils::QPixmap2Mat(pixmap);
 
+    int otsuThreshold = this->calculateOtsuThreshold(img);
+    qDebug() << otsuThreshold;
+
     // Foxing
 
     cv::vector<cv::Mat> yCrCbMatChannels = ProcessorUtils::ExtractYCrCb(img);
@@ -149,13 +149,12 @@ QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
 
     // detais image extraction
     //cv::Mat luminanceMat;
-    //cv::cvtColor(img, luminanceMat, CV_RGB2GRAY);
     cv::Mat luminanceMat = yCrCbMatChannels[0];
 
     cv::Mat smoothedMat = this->produceSmoothMat(luminanceMat, luminanceMat); // Ylp
 
     // why is K a shifting param?
-    int coeficient = calculateDetailImageCoeficient(luminanceMat, fox); // K
+    int coeficient = calculateDetailImageCoeficient(luminanceMat, fox, otsuThreshold); // K
 
     cv::Mat detailImage = this->produceDetailsMat(luminanceMat, smoothedMat, coeficient); // Yhp
 
@@ -188,4 +187,59 @@ QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
     cv::cvtColor(res, output, cv::COLOR_YCrCb2RGB);
 
     return ProcessorUtils::Mat2QPixmap(output);
+}
+
+int Ramponi::Processor::calculateOtsuThreshold(const cv::Mat img) const
+{
+
+    cv::MatND histogram;
+    cv::Mat gray;
+    cv::cvtColor(img, gray, CV_RGB2GRAY);
+    // Initialize parameters
+    int histSize = 256;    // bin size
+    float range[] = { 0, 255 };
+    const float *ranges[] = { range };
+
+    // Calculate histogram
+    calcHist( &gray, 1, 0, cv::Mat(), histogram, 1, &histSize, ranges, true, false );
+
+    // copied from http://www.dandiggins.co.uk/arlib-9.html
+    int i;
+    float w = 0; // first order cumulative
+    float u = 0; // second order cumulative
+    float uT = 0; // total mean level
+
+    int k = 255; // maximum histogram index
+
+    float histNormalized[256];  // normalized histogram values
+
+    float work1, work2; // working variables
+    double work3 = 0.0;
+
+
+    // Create normalised histogram values
+    // (size=image width * image height)
+    for (i=1; i<=k; i++) {
+        histNormalized[i] = histogram.at<uchar>(i) / (float)histSize;
+    }
+
+
+    // Calculate total mean level
+    for (i=1; i<=k; i++) {
+        uT+=(i*histNormalized[i]);
+    }
+
+
+    // Find optimal threshold value
+    for (i=1; i<k; i++) {
+        w+=histNormalized[i-1];
+        u+=(i*histNormalized[i-1]);
+        work1 = (uT * w - u);
+        work2 = (work1 * work1) / ( w * (1.0f-w) );
+        if (work2>work3) work3=work2;
+    }
+
+    // Convert the final value to an integer
+    int threshold = (int)sqrt(work3);
+    return threshold;
 }

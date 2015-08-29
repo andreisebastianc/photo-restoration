@@ -5,6 +5,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <QPixmap>
 #include <QtMath>
+#include <QDebug>
 #include <array>
 #include "iprocessor.h"
 #include "processorutils.h"
@@ -26,12 +27,12 @@ namespace Ramponi {
             int n;
             int A;
             int k;
-            int t;
 
+            int calculateOtsuThreshold(const cv::Mat img) const;
             cv::Mat produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator) const;
             cv::Mat produceDetailsMat(const cv::Mat luminanceMatrix, const cv::Mat smoothedImage, const int coeficient) const;
             cv::Mat correctFoxing(const cv::Mat &src, const cv::Mat &smoothFoxing) const;
-            int calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat) const;
+            int calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat, int threshold) const;
     };
 
 }
