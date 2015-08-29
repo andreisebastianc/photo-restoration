@@ -18,7 +18,7 @@ namespace Ramponi {
             ~Processor();
             QPixmap process(const QPixmap &pixmap) const;
 
-            static const QVector<QString> config;
+            static const QVector<QPair<QString, QString>> config;
 
         private:
             // @note use config object to describe these params

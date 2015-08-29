@@ -13,12 +13,12 @@ Ramponi::Processor::~Processor()
 {
 }
 
-const QVector<QString> Ramponi::Processor::config = {
-    "s, threshold for foxing",
-    "n, number of times rational filter is applied",
-    "A, used in detail image extraction",
-    "k, used in detail image extraction",
-    "t, threshold output but Otsu's method"
+const QVector<QPair<QString, QString>> Ramponi::Processor::config = {
+    QPair<QString, QString>("s, threshold for foxing", "80"),
+    QPair<QString, QString>("n, number of times rational filter is applied", "10"),
+    QPair<QString, QString>("A, used in detail image extraction", "10"),
+    QPair<QString, QString>("k, used in detail image extraction", "10"),
+    QPair<QString, QString>("t, threshold output but Otsu's method", "10")
 };
 
 cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator) const
@@ -118,15 +118,18 @@ cv::Mat Ramponi::Processor::correctFoxing(const cv::Mat &src, const cv::Mat &smo
 
     std::sort(valuesForMedian.begin(), valuesForMedian.end());
 
-    size = valuesForMedian.size();
-    if(size % 2 == 0) {
-        median = ( valuesForMedian.at(size / 2 - 1) + valuesForMedian.at(size / 2) ) / 2;
-    } else {
-        median = valuesForMedian.at(size / 2);
-    }
+    // @note assignment
+    if( (size = valuesForMedian.size() ) ) {
 
-    for (i = 0; i < temp.size(); ++i) {
-        res.at<uchar>(temp.at(i)[0], temp.at(i)[1]) = median;
+        if(size % 2 == 0) {
+            median = ( valuesForMedian.at(size / 2 - 1) + valuesForMedian.at(size / 2) ) / 2;
+        } else {
+            median = valuesForMedian.at(size / 2);
+        }
+
+        for (i = 0; i < temp.size(); ++i) {
+            res.at<uchar>(temp.at(i)[0], temp.at(i)[1]) = median;
+        }
     }
 
     return res;
@@ -179,8 +182,10 @@ QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
 
     //  tonal adjustment
     cv::Mat res;
+    cv::Mat output;
     yCrCbMatChannels[0] = yn;
     cv::merge(yCrCbMatChannels, res);
+    cv::cvtColor(res, output, cv::COLOR_YCrCb2RGB);
 
-    return ProcessorUtils::Mat2QPixmap(res);
+    return ProcessorUtils::Mat2QPixmap(output);
 }

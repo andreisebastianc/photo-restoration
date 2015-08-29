@@ -1,6 +1,6 @@
 #include "processorconfiggenerator.h"
 
-ProcessorConfigGenerator::ProcessorConfigGenerator(QWidget *parent, const QVector<QString> options) : QWidget(parent)
+ProcessorConfigGenerator::ProcessorConfigGenerator(QWidget *parent, const QVector<QPair<QString, QString> > options) : QWidget(parent)
 {
     this->options = options;
     setLayout(this->layout);
@@ -23,12 +23,12 @@ void ProcessorConfigGenerator::generateWidgets()
     layout->addWidget(btn_Process);
 }
 
-void ProcessorConfigGenerator::addLabelAndInputToLayout(QString text, int row)
+void ProcessorConfigGenerator::addLabelAndInputToLayout(QPair<QString, QString> option, int row)
 {
     QLabel *label = new QLabel(this);
     QLineEdit *input = new QLineEdit(this);
-    input->setText("1");
-    label->setText(text);
+    input->setText(option.second);
+    label->setText(option.first);
     label->setBuddy(input);
 
     layout->addWidget(label, row, 0);
