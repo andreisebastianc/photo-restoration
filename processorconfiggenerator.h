@@ -22,7 +22,7 @@ private:
     QVector<QString> options;
 
 signals:
-    void process(QVector<QPair<QString, int> > params);
+    void process(QVector<int> params);
 
 public slots:
     void handleClick();

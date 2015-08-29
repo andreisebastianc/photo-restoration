@@ -1,7 +1,12 @@
 #include "ramponiprocessor.h"
 
-Ramponi::Processor::Processor()
+Ramponi::Processor::Processor(QVector<int> params)
 {
+    this->s = params.at(0);
+    this->n = params.at(1);
+    this->A = params.at(2);
+    this->k = params.at(3);
+    this->t = params.at(4);
 }
 
 Ramponi::Processor::~Processor()
@@ -16,9 +21,10 @@ const QVector<QString> Ramponi::Processor::config = {
     "t, threshold output but Otsu's method"
 };
 
-cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat mat, const int k, const int A, int smoothSteps) const
+cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat mat) const
 {
     cv::Mat res = cv::Mat(mat.rows, mat.cols, CV_8UC1);
+    int steps = this->s;
     int i;
     int j;
     int dividend1;
@@ -26,14 +32,14 @@ cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat mat, const int k, con
     int dividend2;
     int divisor2;
 
-    while (smoothSteps--) {
+    while (steps--) {
         for (i = 1; i < mat.rows - 1; ++i) {
             for (j = 1; j < mat.cols - 1; ++j) {
                 dividend1 = mat.at<uchar>(i-1,j) + mat.at<uchar>(i+1,j) - 2 * mat.at<uchar>(i,j);
-                divisor1 = k * qPow( (mat.at<uchar>(i-1,j) + mat.at<uchar>(i+1,j)), 2 ) + A;
+                divisor1 = this->k * qPow( (mat.at<uchar>(i-1,j) + mat.at<uchar>(i+1,j)), 2 ) + this->A;
 
                 dividend2 = mat.at<uchar>(i,j-1) + mat.at<uchar>(i,j+1) - 2 * mat.at<uchar>(i,j);
-                divisor2 = k * qPow( (mat.at<uchar>(i,j-1) + mat.at<uchar>(i,j+1)), 2 ) + A;
+                divisor2 = this->k * qPow( (mat.at<uchar>(i,j-1) + mat.at<uchar>(i,j+1)), 2 ) + this->A;
 
                 res.at<uchar>(i,j) = dividend1/divisor1 + dividend2/divisor2;
             }
@@ -44,7 +50,7 @@ cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat mat, const int k, con
 }
 
 // @todo  N. Otsu “A Threshold selection method from gray-scale histogram” is t
-int Ramponi::Processor::calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat, const int threshold) const
+int Ramponi::Processor::calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat) const
 {
     int i;
     int j;
@@ -53,7 +59,7 @@ int Ramponi::Processor::calculateDetailImageCoeficient(const cv::Mat luminanceMa
 
     for (i = 1; i < luminanceMat.rows - 1; ++i) {
         for (j = 1; j < luminanceMat.cols - 1; ++j) {
-            if ( foxedMat.at<uchar>(i,j) == 0 && luminanceMat.at<uchar>(i,j) > threshold ) {
+            if ( foxedMat.at<uchar>(i,j) == 0 && luminanceMat.at<uchar>(i,j) > this->t ) {
                 res += luminanceMat.at<uchar>(i,j);
                 counter++;
             }
@@ -136,11 +142,11 @@ QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
     cv::Mat luminanceMat;
     cv::cvtColor(img, luminanceMat, CV_BGR2GRAY);
 
-    int coeficient = calculateDetailImageCoeficient(luminanceMat,foxingMat);
+    int coeficient = calculateDetailImageCoeficient(luminanceMat, foxingMat);
 
     cv::Mat smoothedMat = this->produceSmoothMat(luminanceMat);
 
-    cv::Mat detailImage = this->produceDetailsMat(luminanceMat,smoothedMat, coeficient);
+    cv::Mat detailImage = this->produceDetailsMat(luminanceMat, smoothedMat, coeficient);
 
     // processing of foxed areas
     // foxed map with smooth transitions

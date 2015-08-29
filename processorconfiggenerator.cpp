@@ -36,14 +36,12 @@ void ProcessorConfigGenerator::addLabelAndInputToLayout(QString text, int row)
 }
 
 void ProcessorConfigGenerator::handleClick() {
-    QVector<QPair<QString, int> > results;
-    QList<QLineEdit*> widgets = this->layout->findChildren<QLineEdit*>();
+    QVector<int> results;
+    QList<QLineEdit*> widgets = this->findChildren<QLineEdit*>();
 
     // @todo this doesn't work
     for (int i = 0; i < widgets.length(); ++i) {
-        QPair<QString, int> result;
-        result.first = options.at(i);
-        result.second = widgets.at(i)->text().toInt();
+        int result = widgets.at(i)->text().toInt();
         results << result;
     }
 

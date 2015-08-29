@@ -29,7 +29,7 @@ public:
 
 private slots:
     void on_actionOpen_Image_triggered();
-    void onProcess(QVector<QPair<QString, int> > params);
+    void onProcess(QVector<int> params);
 
 private:
 

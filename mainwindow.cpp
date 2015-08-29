@@ -52,9 +52,10 @@ void MainWindow::on_actionOpen_Image_triggered()
     }
 }
 
-void MainWindow::onProcess(QVector<QPair<QString, int> > params)
+void MainWindow::onProcess(QVector<int> params)
 {
-    QSharedPointer<Ramponi::Processor> ycrcbProcessor(new Ramponi::Processor());
+    Ramponi::Processor* proc = new Ramponi::Processor(params);
+    QSharedPointer<Ramponi::Processor> ycrcbProcessor(proc);
     QPixmap pixmap = this->imagesCollection->addProcessor(ycrcbProcessor);
 
     this->display(pixmap);
