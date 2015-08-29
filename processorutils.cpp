@@ -57,7 +57,7 @@ cv::Mat ProcessorUtils::QPixmap2Mat(const QPixmap &src)
 cv::vector<cv::Mat> ProcessorUtils::ExtractYCrCb(const cv::Mat &src) {
     cv::Mat imgYCrCb;
     cv::vector<cv::Mat> channels;
-    cv::cvtColor(src, imgYCrCb, cv::COLOR_BGR2YCrCb);
+    cv::cvtColor(src, imgYCrCb, cv::COLOR_RGB2YCrCb);
     cv::split(imgYCrCb, channels);
     return channels;
 }

@@ -14,17 +14,17 @@ Ramponi::Processor::~Processor()
 }
 
 const QVector<QString> Ramponi::Processor::config = {
-    "s, smoothing steps",
+    "s, threshold for foxing",
     "n, number of times rational filter is applied",
     "A, used in detail image extraction",
     "k, used in detail image extraction",
     "t, threshold output but Otsu's method"
 };
 
-cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat mat) const
+cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator) const
 {
-    cv::Mat res = cv::Mat(mat.rows, mat.cols, CV_8UC1);
-    int steps = this->s;
+    cv::Mat res = cv::Mat(numeratorMat.rows, numeratorMat.cols, CV_8UC1);
+    int steps = this->n;
     int i;
     int j;
     int dividend1;
@@ -32,14 +32,16 @@ cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat mat) const
     int dividend2;
     int divisor2;
 
-    while (steps--) {
-        for (i = 1; i < mat.rows - 1; ++i) {
-            for (j = 1; j < mat.cols - 1; ++j) {
-                dividend1 = mat.at<uchar>(i-1,j) + mat.at<uchar>(i+1,j) - 2 * mat.at<uchar>(i,j);
-                divisor1 = this->k * qPow( (mat.at<uchar>(i-1,j) + mat.at<uchar>(i+1,j)), 2 ) + this->A;
+    //@todo add assert here
 
-                dividend2 = mat.at<uchar>(i,j-1) + mat.at<uchar>(i,j+1) - 2 * mat.at<uchar>(i,j);
-                divisor2 = this->k * qPow( (mat.at<uchar>(i,j-1) + mat.at<uchar>(i,j+1)), 2 ) + this->A;
+    while (steps--) {
+        for (i = 1; i < numeratorMat.rows - 1; ++i) {
+            for (j = 1; j < numeratorMat.cols - 1; ++j) {
+                dividend1 = numeratorMat.at<uchar>(i-1,j) + numeratorMat.at<uchar>(i+1,j) - 2 * numeratorMat.at<uchar>(i,j);
+                divisor1 = this->k * qPow( (denominator.at<uchar>(i-1,j) - denominator.at<uchar>(i+1,j)), 2 ) + this->A;
+
+                dividend2 = numeratorMat.at<uchar>(i,j-1) + numeratorMat.at<uchar>(i,j+1) - 2 * numeratorMat.at<uchar>(i,j);
+                divisor2 = this->k * qPow( (denominator.at<uchar>(i,j-1) - denominator.at<uchar>(i,j+1)), 2 ) + this->A;
 
                 res.at<uchar>(i,j) = dividend1/divisor1 + dividend2/divisor2;
             }
@@ -55,10 +57,11 @@ int Ramponi::Processor::calculateDetailImageCoeficient(const cv::Mat luminanceMa
     int i;
     int j;
     int counter = 0;
-    int res = 0;
+    int res = 0; // M
 
     for (i = 1; i < luminanceMat.rows - 1; ++i) {
         for (j = 1; j < luminanceMat.cols - 1; ++j) {
+            // this->t is Otsu
             if ( foxedMat.at<uchar>(i,j) == 0 && luminanceMat.at<uchar>(i,j) > this->t ) {
                 res += luminanceMat.at<uchar>(i,j);
                 counter++;
@@ -134,23 +137,28 @@ QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
     cv::Mat img = ProcessorUtils::QPixmap2Mat(pixmap);
 
     // Foxing
-    // foxing detection
+
     cv::vector<cv::Mat> yCrCbMatChannels = ProcessorUtils::ExtractYCrCb(img);
 
-    cv::Mat foxingMat = ProcessorUtils::ExtractFoxingMat(yCrCbMatChannels[2], 30);
+    // foxing detection
+    // Cr is pos 1 from yCrCb
+    cv::Mat fox = ProcessorUtils::ExtractFoxingMat(yCrCbMatChannels[1], this->s);
+
     // detais image extraction
-    cv::Mat luminanceMat;
-    cv::cvtColor(img, luminanceMat, CV_BGR2GRAY);
+    //cv::Mat luminanceMat;
+    //cv::cvtColor(img, luminanceMat, CV_RGB2GRAY);
+    cv::Mat luminanceMat = yCrCbMatChannels[0];
 
-    int coeficient = calculateDetailImageCoeficient(luminanceMat, foxingMat);
+    cv::Mat smoothedMat = this->produceSmoothMat(luminanceMat, luminanceMat); // Ylp
 
-    cv::Mat smoothedMat = this->produceSmoothMat(luminanceMat);
+    // why is K a shifting param?
+    int coeficient = calculateDetailImageCoeficient(luminanceMat, fox); // K
 
-    cv::Mat detailImage = this->produceDetailsMat(luminanceMat, smoothedMat, coeficient);
+    cv::Mat detailImage = this->produceDetailsMat(luminanceMat, smoothedMat, coeficient); // Yhp
 
     // processing of foxed areas
     // foxed map with smooth transitions
-    cv::Mat smoothFoxingMat = this->produceSmoothMat(foxingMat);
+    cv::Mat smoothFoxingMat = this->produceSmoothMat(fox, luminanceMat); //FFox
 
     // merging
     int i;
@@ -166,10 +174,13 @@ QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
 
     // color filtering
     // @todo need to figure out what to do with the resulting values from color filtering
-    this->correctFoxing(yCrCbMatChannels[1], smoothFoxingMat);
-    this->correctFoxing(yCrCbMatChannels[2], smoothFoxingMat);
+    yCrCbMatChannels[1] = this->correctFoxing(yCrCbMatChannels[1], smoothFoxingMat);
+    yCrCbMatChannels[2] = this->correctFoxing(yCrCbMatChannels[2], smoothFoxingMat);
 
     //  tonal adjustment
+    cv::Mat res;
+    yCrCbMatChannels[0] = yn;
+    cv::merge(yCrCbMatChannels, res);
 
-    return ProcessorUtils::Mat2QPixmap(yn);
+    return ProcessorUtils::Mat2QPixmap(res);
 }

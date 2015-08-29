@@ -9,7 +9,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->imagesCollection = new ProcessedImagesCollection();
     this->graphicsViews = new QList<ImageDisplayer*>();
-    this->openImage("/home/andrei/Documents/work/photo-restoration/test.jpg");
+    this->openImage("/home/andrei/Documents/work/photo-restoration/test-2.jpg");
 }
 
 MainWindow::~MainWindow()
@@ -39,7 +39,7 @@ bool MainWindow::openImage(QString fileName)
 void MainWindow::on_actionOpen_Image_triggered()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
-        tr("Open Image"), "/home/jana", tr("Image Files (*.png *.jpg *.bmp)"));
+        tr("Open Image"), "/home/andrei/Documents/work/photo-restoration", tr("Image Files (*.png *.jpg *.bmp)"));
 
     if (!fileName.isEmpty()) {
 
