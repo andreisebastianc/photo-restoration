@@ -6,6 +6,7 @@
 #include <QPixmap>
 #include <QImage>
 #include <QDebug>
+#include <QVector>
 
 class ProcessorUtils
 {
@@ -15,6 +16,7 @@ public:
     static cv::Mat QPixmap2Mat(QPixmap const& src);
     static cv::Mat ExtractFoxingMat(cv::Mat const CrMat, int threshold);
     static cv::vector<cv::Mat> ExtractYCrCb(const cv::Mat& src);
+    static QVector<int> extractHistogram(const cv::Mat grayscaleImg);
 };
 
 #endif // PROCESSORUTILS_H

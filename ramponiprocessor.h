@@ -17,19 +17,19 @@ namespace Ramponi {
         public:
             Processor(QVector<int> params);
             ~Processor();
-            QPixmap process(const QPixmap &pixmap) const;
+            QVector<QPair<QPixmap, QString> > process(const QPixmap &pixmap) const;
 
             static const QVector<QPair<QString, QString>> config;
 
         private:
             // @note use config object to describe these params
-            int s;
-            int n;
-            int A;
-            int k;
+            float s;
+            float n;
+            float A;
+            float k;
 
-            int calculateOtsuThreshold(const cv::Mat img) const;
-            cv::Mat produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator) const;
+            int calculateOtsuThreshold(const QVector<int> histogram, int total) const;
+            cv::Mat produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator, const int flag = CV_8UC1) const;
             cv::Mat produceDetailsMat(const cv::Mat luminanceMatrix, const cv::Mat smoothedImage, const int coeficient) const;
             cv::Mat correctFoxing(const cv::Mat &src, const cv::Mat &smoothFoxing) const;
             int calculateDetailImageCoeficient(const cv::Mat luminanceMat, const cv::Mat foxedMat, int threshold) const;

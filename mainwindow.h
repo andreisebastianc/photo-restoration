@@ -7,6 +7,7 @@
 #include <QList>
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
+#include <QGraphicsTextItem>
 #include <QGridLayout>
 #include <QSplitter>
 #include "processedimagescollection.h"
@@ -36,7 +37,7 @@ private:
     void initGraphicsScene();
     void renderConfigWidgets();
     void renderProcessedPixmaps();
-    void display(const QPixmap &pixmap);
+    void display(const QVector<QPair<QPixmap, QString>> &pixmap);
     void initLayoutWidgets();
     void clearLayout();
     QGraphicsView* createGraphicsScene(const QPixmap &pixmap);

@@ -13,22 +13,22 @@ Ramponi::Processor::~Processor()
 }
 
 const QVector<QPair<QString, QString>> Ramponi::Processor::config = {
-    QPair<QString, QString>("s, threshold for foxing", "80"),
-    QPair<QString, QString>("n, number of times rational filter is applied", "10"),
-    QPair<QString, QString>("A, used in detail image extraction", "10"),
-    QPair<QString, QString>("k, used in detail image extraction", "10")
+    QPair<QString, QString>("s, threshold for foxing", "50"),
+    QPair<QString, QString>("n, number of times rational filter is applied", "50"),
+    QPair<QString, QString>("A, used in detail image extraction", "5"),
+    QPair<QString, QString>("k, used in detail image extraction", "0.2")
 };
 
-cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator) const
+cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator, const int flag) const
 {
-    cv::Mat res = cv::Mat(numeratorMat.rows, numeratorMat.cols, CV_8UC1);
+    cv::Mat res = cv::Mat(numeratorMat.rows, numeratorMat.cols, flag);
     int steps = this->n;
     int i;
     int j;
-    int dividend1;
-    int divisor1;
-    int dividend2;
-    int divisor2;
+    float dividend1;
+    float divisor1;
+    float dividend2;
+    float divisor2;
 
     //@todo add assert here
 
@@ -41,7 +41,7 @@ cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat numeratorMat, const c
                 dividend2 = numeratorMat.at<uchar>(i,j-1) + numeratorMat.at<uchar>(i,j+1) - 2 * numeratorMat.at<uchar>(i,j);
                 divisor2 = this->k * qPow( (denominator.at<uchar>(i,j-1) - denominator.at<uchar>(i,j+1)), 2 ) + this->A;
 
-                res.at<uchar>(i,j) = dividend1/divisor1 + dividend2/divisor2;
+                res.at<uchar>(i,j) = numeratorMat.at<uchar>(i,j) + dividend1/divisor1 + dividend2/divisor2;
             }
         }
     }
@@ -132,114 +132,120 @@ cv::Mat Ramponi::Processor::correctFoxing(const cv::Mat &src, const cv::Mat &smo
     return res;
 }
 
-QPixmap Ramponi::Processor::process(const QPixmap &pixmap) const
+int Ramponi::Processor::calculateOtsuThreshold(const QVector<int> histogram, int total) const {
+    double sum = 0;
+    double sumB = 0;
+    double wB = 0;
+    double wF = 0;
+    double mB;
+    double mF;
+    double max = 0.0;
+    double between = 0.0;
+    double threshold1 = 0.0;
+    double threshold2 = 0.0;
+
+    for (int i = 1; i < 256; ++i) {
+        sum += i * histogram[i];
+    }
+
+    for (int i = 0; i < 256; ++i) {
+        wB += histogram[i];
+        if (wB == 0)
+            continue;
+        wF = total - wB;
+        if (wF == 0)
+            break;
+        sumB += i * histogram[i];
+        mB = sumB / wB;
+        mF = (sum - sumB) / wF;
+        between = wB * wF * (mB - mF) * (mB - mF);
+        if ( between >= max ) {
+            threshold1 = i;
+            if ( between > max ) {
+                threshold2 = i;
+            }
+            max = between;
+        }
+    }
+    return ( threshold1 + threshold2 ) / 2.0;
+}
+
+QVector<QPair<QPixmap, QString> > Ramponi::Processor::process(const QPixmap &pixmap) const
 {
+    QVector<QPair<QPixmap, QString> > toReturn;
     cv::Mat img = ProcessorUtils::QPixmap2Mat(pixmap);
 
-    int otsuThreshold = this->calculateOtsuThreshold(img);
-    qDebug() << otsuThreshold;
+    cv::Mat gray;
+    cv::cvtColor(img, gray, CV_RGB2GRAY);
+    QVector<int> hist = ProcessorUtils::extractHistogram(gray);
+    int total = gray.cols * gray.rows;
+    int otsuThreshold = this->calculateOtsuThreshold(hist, total);
 
     // Foxing
-
     cv::vector<cv::Mat> yCrCbMatChannels = ProcessorUtils::ExtractYCrCb(img);
 
     // foxing detection
     // Cr is pos 1 from yCrCb
-    cv::Mat fox = ProcessorUtils::ExtractFoxingMat(yCrCbMatChannels[1], this->s);
+    cv::Mat fox = ProcessorUtils::ExtractFoxingMat(yCrCbMatChannels[2], this->s);
+    //toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(yCrCbMatChannels[2]), "Cr");
 
     // detais image extraction
     //cv::Mat luminanceMat;
     cv::Mat luminanceMat = yCrCbMatChannels[0];
+    //toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(luminanceMat), "Y");
 
     cv::Mat smoothedMat = this->produceSmoothMat(luminanceMat, luminanceMat); // Ylp
+    toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(smoothedMat), "Ylp");
 
     // why is K a shifting param?
     int coeficient = calculateDetailImageCoeficient(luminanceMat, fox, otsuThreshold); // K
+    qDebug() << coeficient;
+    qDebug() << otsuThreshold;
 
     cv::Mat detailImage = this->produceDetailsMat(luminanceMat, smoothedMat, coeficient); // Yhp
+    toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(detailImage), "Yhp");
 
     // processing of foxed areas
     // foxed map with smooth transitions
-    cv::Mat smoothFoxingMat = this->produceSmoothMat(fox, luminanceMat); //FFox
+    cv::Mat smoothFoxingMat = this->produceSmoothMat(fox, luminanceMat, CV_32FC1); //FFox
+    cv::Mat temp = cv::Mat(smoothFoxingMat.rows, smoothFoxingMat.cols, CV_8UC1);
+    for (int i = 0; i < smoothFoxingMat.rows; ++i) {
+        for (int j = 0; j < smoothFoxingMat.cols; ++j) {
+            temp.at<uchar>(i,j) = smoothFoxingMat.at<uchar>(i,j) * 255;
+        }
+    }
+    toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(temp), "ffox - human readable");
 
     // merging
     int i;
     int j;
     cv::Mat yn = cv::Mat(smoothFoxingMat.rows, smoothFoxingMat.cols, CV_8UC1);
 
-    for (i = 1; i < yn.rows - 1; ++i) {
-        for (j = 1; j < yn.cols - 1; ++j) {
+    for (i = 0; i < yn.rows; ++i) {
+        for (j = 0; j < yn.cols; ++j) {
             yn.at<uchar>(i,j) = detailImage.at<uchar>(i,j) * smoothFoxingMat.at<uchar>(i,j) +
                     luminanceMat.at<uchar>(i,j)*(1-smoothFoxingMat.at<uchar>(i,j));
         }
     }
+    toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(yn), "yn");
 
     // color filtering
     // @todo need to figure out what to do with the resulting values from color filtering
     yCrCbMatChannels[1] = this->correctFoxing(yCrCbMatChannels[1], smoothFoxingMat);
     yCrCbMatChannels[2] = this->correctFoxing(yCrCbMatChannels[2], smoothFoxingMat);
 
-    //  tonal adjustment
     cv::Mat res;
     cv::Mat output;
+    cv::merge(yCrCbMatChannels, res);
+    cv::cvtColor(res, output, cv::COLOR_YCrCb2RGB);
+    toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(output), "color filtering");
+
+    //  tonal adjustment
     yCrCbMatChannels[0] = yn;
     cv::merge(yCrCbMatChannels, res);
     cv::cvtColor(res, output, cv::COLOR_YCrCb2RGB);
 
-    return ProcessorUtils::Mat2QPixmap(output);
-}
+    toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(output), "foxing removed");
 
-int Ramponi::Processor::calculateOtsuThreshold(const cv::Mat img) const
-{
-
-    cv::MatND histogram;
-    cv::Mat gray;
-    cv::cvtColor(img, gray, CV_RGB2GRAY);
-    // Initialize parameters
-    int histSize = 256;    // bin size
-    float range[] = { 0, 255 };
-    const float *ranges[] = { range };
-
-    // Calculate histogram
-    calcHist( &gray, 1, 0, cv::Mat(), histogram, 1, &histSize, ranges, true, false );
-
-    // copied from http://www.dandiggins.co.uk/arlib-9.html
-    int i;
-    float w = 0; // first order cumulative
-    float u = 0; // second order cumulative
-    float uT = 0; // total mean level
-
-    int k = 255; // maximum histogram index
-
-    float histNormalized[256];  // normalized histogram values
-
-    float work1, work2; // working variables
-    double work3 = 0.0;
-
-
-    // Create normalised histogram values
-    // (size=image width * image height)
-    for (i=1; i<=k; i++) {
-        histNormalized[i] = histogram.at<uchar>(i) / (float)histSize;
-    }
-
-
-    // Calculate total mean level
-    for (i=1; i<=k; i++) {
-        uT+=(i*histNormalized[i]);
-    }
-
-
-    // Find optimal threshold value
-    for (i=1; i<k; i++) {
-        w+=histNormalized[i-1];
-        u+=(i*histNormalized[i-1]);
-        work1 = (uT * w - u);
-        work2 = (work1 * work1) / ( w * (1.0f-w) );
-        if (work2>work3) work3=work2;
-    }
-
-    // Convert the final value to an integer
-    int threshold = (int)sqrt(work3);
-    return threshold;
+    return toReturn;
 }

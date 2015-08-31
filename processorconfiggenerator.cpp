@@ -41,7 +41,7 @@ void ProcessorConfigGenerator::handleClick() {
 
     // @todo this doesn't work
     for (int i = 0; i < widgets.length(); ++i) {
-        int result = widgets.at(i)->text().toInt();
+        int result = widgets.at(i)->text().toFloat();
         results << result;
     }
 

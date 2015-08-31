@@ -56,9 +56,9 @@ void MainWindow::onProcess(QVector<int> params)
 {
     Ramponi::Processor* proc = new Ramponi::Processor(params);
     QSharedPointer<Ramponi::Processor> ycrcbProcessor(proc);
-    QPixmap pixmap = this->imagesCollection->addProcessor(ycrcbProcessor);
+    QVector<QPair<QPixmap, QString>> pixmaps = this->imagesCollection->addProcessor(ycrcbProcessor);
 
-    this->display(pixmap);
+    this->display(pixmaps);
     this->renderConfigWidgets();
 }
 
@@ -79,7 +79,7 @@ void MainWindow::initLayoutWidgets() {
 
 void MainWindow::renderProcessedPixmaps() {
     for (int i = 0; i < this->imagesCollection->length(); ++i) {
-        QGraphicsView *view = this->createGraphicsScene(this->imagesCollection->at(i));
+        QGraphicsView *view = this->createGraphicsScene(this->imagesCollection->at(i).first);
         this->splitter->addWidget(view);
         view->show();
     }
@@ -96,16 +96,20 @@ void MainWindow::renderConfigWidgets() {
     splitter->addWidget(this->configWidget);
 }
 
-void MainWindow::display(const QPixmap &pixmap)
+void MainWindow::display(const QVector<QPair<QPixmap, QString>> &pixmaps)
 {
-    QGraphicsScene *scene = new QGraphicsScene(this);
-    ImageDisplayer *view = new ImageDisplayer(scene, this);
+    QPair<QPixmap, QString> pixmap;
+    foreach (pixmap, pixmaps) {
+        QGraphicsScene *scene = new QGraphicsScene(this);
+        ImageDisplayer *view = new ImageDisplayer(scene, this);
 
-    scene->addPixmap(pixmap);
+        scene->addPixmap(pixmap.first);
+        scene->addText(pixmap.second)->setDefaultTextColor(Qt::red);
 
-    this->graphicsViews->append(view);
-    splitter->addWidget(view);
-    view->show();
+        this->graphicsViews->append(view);
+        splitter->addWidget(view);
+        view->show();
+    }
 }
 
 QGraphicsView* MainWindow::createGraphicsScene(const QPixmap &pixmap)
@@ -114,6 +118,7 @@ QGraphicsView* MainWindow::createGraphicsScene(const QPixmap &pixmap)
     ImageDisplayer *view = new ImageDisplayer(scene, this);
 
     scene->addPixmap(pixmap);
+    scene->addText("ORIGINAL")->setDefaultTextColor(Qt::red);
 
     this->graphicsViews->append(view);
 

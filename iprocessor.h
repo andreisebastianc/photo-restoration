@@ -7,7 +7,7 @@ class IProcessor
 {
 public:
     virtual ~IProcessor(){};
-    virtual QPixmap process(const QPixmap &pixmap) const = 0;
+    virtual QVector<QPair<QPixmap, QString>> process(const QPixmap &pixmap) const = 0;
 };
 
 #endif // IPROCESSOR_H

@@ -62,6 +62,30 @@ cv::vector<cv::Mat> ProcessorUtils::ExtractYCrCb(const cv::Mat &src) {
     return channels;
 }
 
+QVector<int> ProcessorUtils::extractHistogram(const cv::Mat grayscaleImg)
+{
+    QVector<int> hist;
+    int i = 0;
+    for(i = 0; i < 256; i++) {
+        hist << 0;
+    }
+
+    cv::vector<cv::Mat> channels;
+
+    cv::split(grayscaleImg, channels);
+    int val;
+    cv::Mat channel = channels[0];
+
+    for (int i = 0; i < channel.cols; ++i) {
+        for (int j = 0; j < channel.rows; ++j) {
+            val = channel.at<uchar>(i,j);
+            hist[val] += 1;
+        }
+    }
+
+    return hist;
+}
+
 cv::Mat ProcessorUtils::ExtractFoxingMat(const cv::Mat crMat, int threshold)
 {
     int i;
