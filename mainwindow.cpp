@@ -96,15 +96,15 @@ void MainWindow::renderConfigWidgets() {
     splitter->addWidget(this->configWidget);
 }
 
-void MainWindow::display(const QVector<QPair<QPixmap, QString>> &pixmaps)
+void MainWindow::display(const QVector<QPair<QPixmap, QString>> &pairs)
 {
-    QPair<QPixmap, QString> pixmap;
-    foreach (pixmap, pixmaps) {
+    QPair<QPixmap, QString> pair;
+    foreach (pair, pairs) {
         QGraphicsScene *scene = new QGraphicsScene(this);
         ImageDisplayer *view = new ImageDisplayer(scene, this);
 
-        scene->addPixmap(pixmap.first);
-        scene->addText(pixmap.second)->setDefaultTextColor(Qt::red);
+        scene->addPixmap(pair.first);
+        scene->addText(pair.second)->setDefaultTextColor(Qt::red);
 
         this->graphicsViews->append(view);
         splitter->addWidget(view);

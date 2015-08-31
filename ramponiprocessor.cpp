@@ -13,10 +13,10 @@ Ramponi::Processor::~Processor()
 }
 
 const QVector<QPair<QString, QString>> Ramponi::Processor::config = {
-    QPair<QString, QString>("s, threshold for foxing", "50"),
-    QPair<QString, QString>("n, number of times rational filter is applied", "50"),
-    QPair<QString, QString>("A, used in detail image extraction", "5"),
-    QPair<QString, QString>("k, used in detail image extraction", "0.2")
+    QPair<QString, QString>("s, threshold for foxing", "25"),
+    QPair<QString, QString>("n, number of times rational filter is applied", "75"),
+    QPair<QString, QString>("A, used in detail image extraction", "1"),
+    QPair<QString, QString>("k, used in detail image extraction", "0.001")
 };
 
 cv::Mat Ramponi::Processor::produceSmoothMat(const cv::Mat numeratorMat, const cv::Mat denominator, const int flag) const
@@ -185,13 +185,14 @@ QVector<QPair<QPixmap, QString> > Ramponi::Processor::process(const QPixmap &pix
     cv::vector<cv::Mat> yCrCbMatChannels = ProcessorUtils::ExtractYCrCb(img);
 
     // foxing detection
-    // Cr is pos 1 from yCrCb
+    // Cr is pos 2 from yCrCb
     cv::Mat fox = ProcessorUtils::ExtractFoxingMat(yCrCbMatChannels[2], this->s);
     //toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(yCrCbMatChannels[2]), "Cr");
+    //toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(fox), "Fox");
 
     // detais image extraction
     //cv::Mat luminanceMat;
-    cv::Mat luminanceMat = yCrCbMatChannels[0];
+    cv::Mat luminanceMat = yCrCbMatChannels[0]; // y
     //toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(luminanceMat), "Y");
 
     cv::Mat smoothedMat = this->produceSmoothMat(luminanceMat, luminanceMat); // Ylp
@@ -230,7 +231,6 @@ QVector<QPair<QPixmap, QString> > Ramponi::Processor::process(const QPixmap &pix
     toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(yn), "yn");
 
     // color filtering
-    // @todo need to figure out what to do with the resulting values from color filtering
     yCrCbMatChannels[1] = this->correctFoxing(yCrCbMatChannels[1], smoothFoxingMat);
     yCrCbMatChannels[2] = this->correctFoxing(yCrCbMatChannels[2], smoothFoxingMat);
 

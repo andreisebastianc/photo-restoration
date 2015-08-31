@@ -23,8 +23,8 @@ namespace Ramponi {
 
         private:
             // @note use config object to describe these params
-            float s;
-            float n;
+            int s;
+            int n;
             float A;
             float k;
 

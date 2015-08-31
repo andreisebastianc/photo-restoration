@@ -6,7 +6,7 @@
 class IProcessor
 {
 public:
-    virtual ~IProcessor(){};
+    virtual ~IProcessor(){}
     virtual QVector<QPair<QPixmap, QString>> process(const QPixmap &pixmap) const = 0;
 };
 
