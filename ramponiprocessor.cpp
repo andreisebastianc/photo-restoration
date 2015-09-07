@@ -96,24 +96,22 @@ cv::Mat Ramponi::Processor::correctFoxing(const cv::Mat &src, const cv::Mat &smo
     int i;
     int j;
     int val;
-    int median;
+    uint median;
     int size;
     QVector<int> valuesForMedian;
     QVector<std::array<int,2>> temp;
 
-    for (i = 1; i < smoothFoxing.rows - 1; ++i) {
-        for (j = 1; j < smoothFoxing.cols - 1; ++j) {
+    for (i = 0; i < smoothFoxing.rows - 1; ++i) {
+        for (j = 0; j < smoothFoxing.cols - 1; ++j) {
             val = smoothFoxing.at<uchar>(i,j);
             if(val > 0) {
-                valuesForMedian.push_back(val);
+                valuesForMedian.push_back(src.at<uchar>(i,j));
                 temp.push_back({i,j});
             } else {
                 res.at<uchar>(i,j) = src.at<uchar>(i,j);
             }
         }
     }
-
-    std::sort(valuesForMedian.begin(), valuesForMedian.end());
 
     // @note assignment
     if( (size = valuesForMedian.size() ) ) {
@@ -209,6 +207,8 @@ QVector<QPair<QPixmap, QString> > Ramponi::Processor::process(const QPixmap &pix
     // processing of foxed areas
     // foxed map with smooth transitions
     cv::Mat smoothFoxingMat = this->produceSmoothMat(fox, luminanceMat, CV_32FC1); //FFox
+
+    // used only for debug
     cv::Mat temp = cv::Mat(smoothFoxingMat.rows, smoothFoxingMat.cols, CV_8UC1);
     for (int i = 0; i < smoothFoxingMat.rows; ++i) {
         for (int j = 0; j < smoothFoxingMat.cols; ++j) {
@@ -224,8 +224,7 @@ QVector<QPair<QPixmap, QString> > Ramponi::Processor::process(const QPixmap &pix
 
     for (i = 0; i < yn.rows; ++i) {
         for (j = 0; j < yn.cols; ++j) {
-            yn.at<uchar>(i,j) = detailImage.at<uchar>(i,j) * smoothFoxingMat.at<uchar>(i,j) +
-                    luminanceMat.at<uchar>(i,j)*(1-smoothFoxingMat.at<uchar>(i,j));
+            yn.at<uchar>(i,j) = detailImage.at<uchar>(i,j) * smoothFoxingMat.at<uchar>(i,j) + luminanceMat.at<uchar>(i,j)*(1-smoothFoxingMat.at<uchar>(i,j));
         }
     }
     toReturn << QPair<QPixmap, QString>(ProcessorUtils::Mat2QPixmap(yn), "yn");
